@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Baruch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  /* ============================================================
+     BARUCH — DESIGN SYSTEM v0.6
+     One scale per dimension. No hardcoded values outside tokens.
+     ============================================================ */
+
+  :root {
+    /* — Surface (warmer, more neutral; less "cardboard") — */
+    --bg-0: #15130f;          /* canvas */
+    --bg-1: #1c1a15;          /* primary panels */
+    --bg-2: #221f19;          /* elevated panels */
+    --bg-3: #2a261f;          /* hover / pressed */
+    --bg-graph: #110f0b;      /* graph canvas — slightly deeper */
+
+    /* — Ink (text) — */
+    --ink-1: #ece6d8;         /* primary text */
+    --ink-2: #b5ad9c;         /* secondary */
+    --ink-3: #847d6e;         /* tertiary */
+    --ink-4: #5a5448;         /* faint / disabled */
+
+    /* — Lines — */
+    --line-1: #2e2a23;        /* default rule */
+    --line-2: #3a352c;        /* stronger rule (focus boundary) */
+
+    /* — Brand & semantic — */
+    --gold: #c89b5c;          /* primary accent */
+    --gold-bright: #e0b274;   /* hover/active */
+    --gold-dim: #8e6d3f;      /* depressed */
+    --gold-soft-08: rgba(200, 155, 92, 0.08);
+    --gold-soft-14: rgba(200, 155, 92, 0.14);
+    --gold-soft-22: rgba(200, 155, 92, 0.22);
+    --gold-soft-36: rgba(200, 155, 92, 0.36);
+
+    --sage: #8fa68e;          /* user voice */
+    --copper: #b67a5a;        /* branch / mark */
+    --copper-soft-14: rgba(182, 122, 90, 0.14);
+    --copper-soft-26: rgba(182, 122, 90, 0.26);
+    --copper-soft-44: rgba(182, 122, 90, 0.44);
+    --copper-soft-60: rgba(182, 122, 90, 0.60);
+
+    /* — Spacing scale (4-based) — */
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 24px;
+    --s-6: 32px;
+    --s-7: 48px;
+    --s-8: 64px;
+
+    /* — Type scale (5 sizes only) — */
+    --fs-meta: 11px;          /* uppercase metadata, mono */
+    --fs-small: 13px;         /* secondary copy */
+    --fs-body: 16px;          /* default reading */
+    --fs-prose: 17px;         /* serif prose */
+    --fs-title: 20px;         /* brand / large labels */
+
+    /* — Type weights — */
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+
+    /* — Line heights — */
+    --lh-tight: 1.3;
+    --lh-snug: 1.45;
+    --lh-prose: 1.65;
+    --lh-loose: 1.8;
+
+    /* — Letter spacing for mono uppercase — */
+    --ls-mono: 0.12em;
+    --ls-mono-tight: 0.08em;
+    --ls-mono-loose: 0.16em;
+
+    /* — Radius — */
+    --r-1: 2px;
+    --r-2: 4px;
+    --r-3: 6px;
+
+    /* — Motion — */
+    --t-fast: 150ms;
+    --t-base: 220ms;
+    --t-slow: 380ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* — Shadow — */
+    --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.25);
+    --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.30);
+    --shadow-3: 0 6px 20px rgba(0, 0, 0, 0.42);
+
+    /* — Fonts — */
+    --serif: 'EB Garamond', Georgia, 'Iowan Old Style', serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  /* ============================================================
+     RESET / GLOBAL
+     ============================================================ */
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-0);
+    color: var(--ink-1);
+    font-family: var(--serif);
+    font-size: var(--fs-prose);
+    line-height: var(--lh-prose);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern', 'liga', 'onum';
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::selection {
+    background: var(--gold-soft-22);
+    color: var(--gold-bright);
+  }
+
+  /* Custom scrollbar — Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-1) transparent;
+  }
+  /* Custom scrollbar — webkit */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-1);
+    border-radius: var(--r-3);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--line-2);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+
+  /* Focus ring — universal */
+  :focus-visible {
+    outline: 2px solid var(--gold-soft-44);
+    outline-offset: 2px;
+    border-radius: var(--r-1);
+  }
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* ============================================================
+     UTILITY CLASSES — meta / mono labels
+     ============================================================ */
+
+  .label-meta {
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    color: var(--ink-3);
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+
+  header {
+    flex-shrink: 0;
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--line-1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-1);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-medium);
+    letter-spacing: 0.005em;
+    line-height: 1;
+  }
+  .brand em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    color: var(--gold);
+    line-height: 0;
+  }
+  .brand-mark .bm-ring {
+    transform-origin: 16px 16px;
+    transition: opacity var(--t-base) var(--ease-standard);
+    opacity: 0.65;
+  }
+  .brand-mark .bm-core {
+    transform-origin: 16px 16px;
+    transition: transform var(--t-base) var(--ease-standard);
+  }
+  .brand-mark.spinning .bm-ring {
+    animation: bmSpin 1.6s linear infinite;
+    opacity: 1;
+  }
+  .brand-mark.spinning .bm-core {
+    animation: bmPulse 1.6s var(--ease-standard) infinite;
+  }
+  @keyframes bmSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes bmPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(0.7); opacity: 0.6; }
+  }
+
+  header .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+  }
+  header .meta button {
+    background: transparent;
+    border: 1px solid var(--line-1);
+    color: var(--ink-3);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-mono);
+    padding: var(--s-1) var(--s-3);
+    border-radius: var(--r-1);
+    cursor: pointer;
+    text-transform: inherit;
+    transition: color var(--t-fast) var(--ease-standard),
+                border-color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard);
+  }
+  header .meta button:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: var(--gold-soft-08);
+  }
+  header .meta button:active {
+    background: var(--gold-soft-14);
+  }
+
+  /* ============================================================
+     GRAPH BAND
+     ============================================================ */
+
+  .graph-band {
+    height: 280px;
+    background: var(--bg-graph);
+    border-bottom: 1px solid var(--line-1);
+    display: flex;
+    flex-direction: column;
+    /* sticky-ish: graph-band-header stays visible at top while body scrolls past */
+  }
+  .graph-band-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: var(--s-2) var(--s-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line-1);
+    background: var(--bg-1);
+  }
+
+  .graph-band-label {
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono-loose);
+  }
+
+  .graph-band-spacer { flex: 1; }
+
+  .graph-controls {
+    display: flex;
+    gap: var(--s-2);
+  }
+  .graph-controls button {
+    background: transparent;
+    border: 1px solid var(--line-1);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    padding: var(--s-1) var(--s-3);
+    border-radius: var(--r-1);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    transition: color var(--t-fast) var(--ease-standard),
+                border-color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard);
+  }
+  .graph-controls button:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: var(--gold-soft-08);
+  }
+
+  .graph-canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #graphSvg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    display: block;
+  }
+  #graphSvg:active { cursor: grabbing; }
+
+  .graph-empty-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-4);
+    font-style: italic;
+    font-size: var(--fs-small);
+    pointer-events: none;
+  }
+
+  .graph-node { cursor: pointer; }
+  .graph-node circle {
+    transition: r var(--t-fast) var(--ease-standard),
+                stroke-width var(--t-fast) var(--ease-standard);
+  }
+  .graph-node:hover circle { stroke-width: 3px; }
+  .graph-node-label {
+    font-family: var(--serif);
+    font-size: 12px;
+    fill: var(--ink-1);
+    pointer-events: none;
+    user-select: none;
+    font-style: italic;
+  }
+  .graph-node.active .graph-node-label {
+    fill: var(--gold-bright);
+    font-style: normal;
+    font-weight: var(--fw-medium);
+  }
+  .graph-node.main .graph-node-label {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    fill: var(--ink-2);
+  }
+  .graph-edge {
+    stroke: rgba(168, 161, 149, 0.22);
+    stroke-width: 1px;
+    fill: none;
+  }
+  .graph-edge.on-active-path {
+    stroke: var(--gold-soft-44);
+    stroke-width: 1.5px;
+  }
+
+  /* ============================================================
+     WORKSPACE
+     ============================================================ */
+
+  .workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .thread {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--line-1);
+    position: relative;
+    background: var(--bg-0);
+  }
+  .thread:last-child { border-right: none; }
+
+  .thread.branch {
+    background: var(--bg-1);
+    flex: 0 0 540px;
+    animation: slideInBranch var(--t-slow) var(--ease-standard);
+  }
+  .thread.branch.hidden { display: none; }
+  @keyframes slideInBranch {
+    from { transform: translateX(32px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+
+  .thread-header {
+    padding: var(--s-3) var(--s-5);
+    border-bottom: 1px solid var(--line-1);
+    background: var(--bg-1);
+  }
+  .thread.branch .thread-header { background: var(--bg-2); }
+
+  .thread-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .thread-title {
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    white-space: nowrap;
+  }
+  .thread.branch .thread-title { color: var(--copper); }
+
+  /* breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--s-1);
+    overflow-x: auto;
+    flex: 1;
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    color: var(--ink-3);
+    padding-bottom: 2px;
+  }
+  .breadcrumb::-webkit-scrollbar { height: 0; }
+
+  .crumb {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 2px var(--s-2);
+    border-radius: var(--r-1);
+    color: var(--ink-3);
+    text-decoration: none;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+  }
+  .crumb:hover {
+    color: var(--gold);
+    background: var(--gold-soft-08);
+  }
+  .crumb.current {
+    color: var(--copper);
+    cursor: default;
+    font-style: normal;
+    font-weight: var(--fw-medium);
+  }
+  .crumb.current:hover { background: transparent; }
+  .crumb.root {
+    font-style: normal;
+    text-transform: uppercase;
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+  }
+  .crumb-sep {
+    color: var(--ink-4);
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  .thread-close {
+    background: transparent;
+    border: none;
+    color: var(--ink-3);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 0 var(--s-2);
+    border-radius: var(--r-1);
+    line-height: 1;
+    transition: color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard);
+    flex-shrink: 0;
+  }
+  .thread-close:hover {
+    color: var(--ink-1);
+    background: var(--bg-3);
+  }
+
+  .thread-source {
+    padding: var(--s-3) var(--s-5);
+    border-top: 1px solid var(--line-1);
+    background: var(--bg-0);
+    font-style: italic;
+    color: var(--ink-2);
+    font-size: var(--fs-small);
+    line-height: var(--lh-snug);
+    border-left: 2px solid var(--copper);
+  }
+  .thread-source-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    margin-bottom: var(--s-1);
+    font-style: normal;
+  }
+
+  /* ============================================================
+     MESSAGES — the heart of the reading experience
+     ============================================================ */
+
+  /* scroll container — wraps graph-band (main only) + messages.
+     Composer is OUTSIDE this; it stays pinned to the bottom of .thread. */
+  .thread-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    position: relative;
+    min-height: 0;
+  }
+
+  .messages {
+    padding: var(--s-5);
+    /* generous bottom padding so the last message isn't hidden behind composer's shadow */
+    padding-bottom: var(--s-7);
+  }
+
+  .msg {
+    margin-bottom: var(--s-6);
+    max-width: 100%;
+  }
+  .msg:last-child { margin-bottom: var(--s-3); }
+
+  .msg-role {
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    color: var(--ink-4);
+    margin-bottom: var(--s-2);
+  }
+  .msg.user .msg-role { color: var(--sage); }
+  .msg.assistant .msg-role { color: var(--gold); }
+
+  .msg-content {
+    color: var(--ink-1);
+    user-select: text;
+    line-height: var(--lh-prose);
+  }
+
+  /* prose styling — applied to assistant messages */
+  .msg-content > p,
+  .msg-content > ul,
+  .msg-content > ol,
+  .msg-content > pre,
+  .msg-content > blockquote,
+  .msg-content > hr,
+  .msg-content > h1,
+  .msg-content > h2,
+  .msg-content > h3 {
+    margin-bottom: var(--s-4);
+  }
+  .msg-content > p:last-child,
+  .msg-content > ul:last-child,
+  .msg-content > ol:last-child,
+  .msg-content > pre:last-child,
+  .msg-content > blockquote:last-child {
+    margin-bottom: 0;
+  }
+
+  .msg-content strong {
+    font-weight: var(--fw-semibold);
+    color: var(--ink-1);
+  }
+  .msg-content em { font-style: italic; }
+
+  .msg-content h1, .msg-content h2, .msg-content h3 {
+    font-family: var(--serif);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-snug);
+    color: var(--ink-1);
+    margin-top: var(--s-5);
+    letter-spacing: -0.005em;
+  }
+  .msg-content h1 { font-size: 22px; }
+  .msg-content h2 { font-size: 19px; }
+  .msg-content h3 { font-size: 17px; font-style: italic; color: var(--ink-2); }
+
+  .msg-content ul, .msg-content ol {
+    padding-left: var(--s-5);
+  }
+  .msg-content li {
+    margin-bottom: var(--s-2);
+    padding-left: var(--s-1);
+  }
+  .msg-content li::marker {
+    color: var(--ink-3);
+  }
+  .msg-content ul > li::marker {
+    content: '· ';
+    font-size: 1.2em;
+  }
+  .msg-content li > p { margin-bottom: var(--s-2); }
+  .msg-content li > p:last-child { margin-bottom: 0; }
+  .msg-content li > ul, .msg-content li > ol {
+    margin-top: var(--s-2);
+    margin-bottom: 0;
+  }
+
+  .msg-content blockquote {
+    border-left: 2px solid var(--gold-soft-36);
+    padding: var(--s-1) var(--s-4);
+    color: var(--ink-2);
+    font-style: italic;
+  }
+  .msg-content blockquote p { margin-bottom: var(--s-2); }
+  .msg-content blockquote p:last-child { margin-bottom: 0; }
+
+  .msg-content code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    color: var(--gold-bright);
+    background: var(--bg-2);
+    padding: 1px 5px;
+    border-radius: var(--r-1);
+    border: 1px solid var(--line-1);
+  }
+
+  .msg-content pre {
+    background: var(--bg-2);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-2);
+    padding: var(--s-4);
+    overflow-x: auto;
+    line-height: var(--lh-snug);
+  }
+  .msg-content pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--ink-1);
+    font-size: var(--fs-small);
+    line-height: var(--lh-snug);
+  }
+
+  .msg-content a {
+    color: var(--gold);
+    text-decoration: underline;
+    text-decoration-color: var(--gold-soft-36);
+    text-underline-offset: 2px;
+    transition: text-decoration-color var(--t-fast) var(--ease-standard);
+  }
+  .msg-content a:hover {
+    text-decoration-color: var(--gold);
+  }
+
+  .msg-content hr {
+    border: none;
+    height: 1px;
+    background: var(--line-1);
+    margin: var(--s-5) 0;
+  }
+
+  /* assistant content allows selection for branching */
+  .msg.assistant .msg-content { cursor: text; }
+  .msg.assistant .msg-content::selection,
+  .msg.assistant .msg-content *::selection {
+    background: var(--gold-soft-22);
+    color: var(--gold-bright);
+  }
+
+  /* ============================================================
+     SYNTAX HIGHLIGHTING — minimal palette tuned to brand
+     ============================================================ */
+
+  .hljs-keyword, .hljs-built_in, .hljs-type { color: #c89b5c; }
+  .hljs-string, .hljs-attr { color: #b09a78; }
+  .hljs-number, .hljs-literal { color: #d4a76a; }
+  .hljs-comment, .hljs-quote { color: var(--ink-4); font-style: italic; }
+  .hljs-function, .hljs-title { color: var(--gold-bright); }
+  .hljs-variable, .hljs-name { color: var(--ink-1); }
+  .hljs-tag { color: var(--copper); }
+  .hljs-attribute { color: #b09a78; }
+  .hljs-symbol, .hljs-bullet { color: var(--copper); }
+  .hljs-section { color: var(--gold-bright); font-weight: var(--fw-semibold); }
+  .hljs-selector-tag { color: var(--gold); }
+  .hljs-selector-class, .hljs-selector-id { color: var(--copper); }
+  .hljs-meta { color: var(--ink-3); }
+  .hljs-deletion { color: #c98a8a; }
+  .hljs-addition { color: #8fa68e; }
+
+  /* ============================================================
+     BRANCH MARKS (highlights) on text
+     ============================================================ */
+
+  .branch-mark {
+    background: var(--copper-soft-14);
+    border-bottom: 1px dotted var(--copper-soft-60);
+    cursor: pointer;
+    padding: 1px 0;
+    transition: background var(--t-fast) var(--ease-standard);
+  }
+  .branch-mark:hover { background: var(--copper-soft-26); }
+  .branch-mark.active {
+    background: var(--copper-soft-26);
+    border-bottom: 1px solid var(--copper);
+  }
+  .branch-mark.flash { animation: flashMark 1.6s var(--ease-standard); }
+  @keyframes flashMark {
+    0%, 30% { background: var(--gold-soft-36); }
+    100%    { background: var(--copper-soft-26); }
+  }
+
+  /* ============================================================
+     BRANCH TRIGGER (the "↳ branch from this" button)
+     ============================================================ */
+
+  .branch-trigger {
+    position: absolute;
+    z-index: 100;
+    background: var(--bg-2);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: var(--s-1) var(--s-3);
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-mono-tight);
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: var(--r-1);
+    box-shadow: var(--shadow-3);
+    opacity: 0;
+    transform: scale(0.85) translateY(4px);
+    pointer-events: none;
+    transition: opacity var(--t-fast) var(--ease-standard),
+                transform var(--t-base) var(--ease-emphasized),
+                background var(--t-fast) var(--ease-standard),
+                color var(--t-fast) var(--ease-standard);
+  }
+  .branch-trigger.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+  }
+  .branch-trigger:hover {
+    background: var(--gold);
+    color: var(--bg-0);
+    transform: scale(1.04);
+  }
+  .branch-trigger:active { transform: scale(0.97); }
+
+  /* ============================================================
+     SCROLL-TO-BOTTOM BUTTON — appears when user has scrolled up
+     ============================================================ */
+
+  .scroll-to-bottom {
+    position: sticky;
+    bottom: var(--s-3);
+    margin-left: auto;
+    margin-right: var(--s-4);
+    margin-top: -36px; /* float over the last bit of content without taking space */
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-2);
+    color: var(--ink-2);
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow-2);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.9);
+    transition: opacity var(--t-base) var(--ease-standard),
+                transform var(--t-base) var(--ease-emphasized),
+                color var(--t-fast) var(--ease-standard),
+                background var(--t-fast) var(--ease-standard),
+                border-color var(--t-fast) var(--ease-standard);
+    z-index: 10;
+  }
+  .scroll-to-bottom.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+  .scroll-to-bottom:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: var(--bg-3);
+  }
+  .scroll-to-bottom:active {
+    transform: translateY(1px) scale(0.95);
+  }
+  .scroll-to-bottom svg { display: block; }
+
+  /* ============================================================
+     COMPOSER
+     ============================================================ */
+
+  .composer {
+    flex-shrink: 0;
+    padding: var(--s-4) var(--s-5);
+    border-top: 1px solid var(--line-1);
+    background: var(--bg-1);
+    box-shadow: 0 -8px 24px -8px rgba(0, 0, 0, 0.35);
+    z-index: 2;
+  }
+  .thread.branch .composer { background: var(--bg-2); }
+
+  .composer-row {
+    display: flex;
+    gap: var(--s-3);
+    align-items: flex-end;
+  }
+
+  .composer textarea {
+    flex: 1;
+    background: var(--bg-0);
+    border: 1px solid var(--line-1);
+    color: var(--ink-1);
+    font-family: var(--serif);
+    font-size: var(--fs-body);
+    line-height: var(--lh-snug);
+    padding: var(--s-3) var(--s-4);
+    resize: none;
+    min-height: 44px;
+    max-height: 200px;
+    outline: none;
+    border-radius: var(--r-2);
+    transition: border-color var(--t-base) var(--ease-standard),
+                box-shadow var(--t-base) var(--ease-standard),
+                background var(--t-base) var(--ease-standard);
+  }
+  .composer textarea::placeholder {
+    color: var(--ink-4);
+    font-style: italic;
+  }
+  .composer textarea:hover {
+    border-color: var(--line-2);
+  }
+  .composer textarea:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft-14);
+    background: var(--bg-1);
+  }
+
+  .composer button {
+    background: var(--gold);
+    color: var(--bg-0);
+    border: none;
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    cursor: pointer;
+    height: 44px;
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-1);
+    transition: background var(--t-fast) var(--ease-standard),
+                transform var(--t-fast) var(--ease-standard),
+                box-shadow var(--t-fast) var(--ease-standard);
+  }
+  .composer button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .composer button:not(:disabled):hover {
+    background: var(--gold-bright);
+    box-shadow: var(--shadow-2);
+  }
+  .composer button:not(:disabled):active {
+    transform: translateY(1px);
+    box-shadow: none;
+    background: var(--gold-dim);
+  }
+
+  .composer-hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: var(--fw-medium);
+    color: var(--ink-4);
+    margin-top: var(--s-2);
+    letter-spacing: var(--ls-mono);
+    text-transform: uppercase;
+  }
+
+  /* ============================================================
+     PASSWORD GATE
+     ============================================================ */
+
+  .password-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: var(--bg-0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-5);
+    animation: gateFadeIn var(--t-slow) var(--ease-standard);
+  }
+  .password-gate.hidden { display: none; }
+  @keyframes gateFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .password-gate-card {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    padding: var(--s-7) var(--s-5);
+  }
+
+  .password-gate-mark {
+    color: var(--gold);
+    margin-bottom: var(--s-4);
+    display: flex;
+    justify-content: center;
+  }
+
+  .password-gate-title {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: var(--fw-medium);
+    line-height: 1;
+    color: var(--ink-1);
+    margin-bottom: var(--s-2);
+    letter-spacing: 0.005em;
+  }
+  .password-gate-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .password-gate-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-3);
+    font-size: var(--fs-body);
+    margin-bottom: var(--s-6);
+  }
+
+  .password-gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .password-gate-form input {
+    background: var(--bg-1);
+    border: 1px solid var(--line-1);
+    color: var(--ink-1);
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--mono);
+    font-size: var(--fs-body);
+    border-radius: var(--r-2);
+    outline: none;
+    text-align: center;
+    transition: border-color var(--t-base) var(--ease-standard),
+                box-shadow var(--t-base) var(--ease-standard),
+                background var(--t-base) var(--ease-standard);
+  }
+  .password-gate-form input::placeholder {
+    color: var(--ink-4);
+    font-style: italic;
+  }
+  .password-gate-form input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft-14);
+    background: var(--bg-2);
+  }
+
+  .password-gate-form button {
+    background: var(--gold);
+    color: var(--bg-0);
+    border: none;
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--mono);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    cursor: pointer;
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-1);
+    transition: background var(--t-fast) var(--ease-standard),
+                transform var(--t-fast) var(--ease-standard),
+                box-shadow var(--t-fast) var(--ease-standard);
+  }
+  .password-gate-form button:hover {
+    background: var(--gold-bright);
+    box-shadow: var(--shadow-2);
+  }
+  .password-gate-form button:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+
+  .password-gate-error {
+    color: var(--copper);
+    font-style: italic;
+    font-size: var(--fs-small);
+    min-height: 1.5em;
+    margin-top: var(--s-3);
+  }
+
+  /* ============================================================
+     THINKING / STREAMING INDICATORS
+     ============================================================ */
+
+  .thinking {
+    color: var(--ink-3);
+    font-style: italic;
+    font-size: var(--fs-small);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  .thinking::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: thinkPulse 1.4s var(--ease-standard) infinite;
+  }
+  @keyframes thinkPulse {
+    0%, 100% { opacity: 0.25; transform: scale(0.85); }
+    50%      { opacity: 1; transform: scale(1.15); }
+  }
+
+  .stream-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1.05em;
+    background: var(--gold);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: caretBlink 1s steps(1) infinite;
+    opacity: 0.85;
+    border-radius: 1px;
+  }
+  @keyframes caretBlink {
+    0%, 50%   { opacity: 0.85; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* ============================================================
+     EMPTY STATE
+     ============================================================ */
+
+  .empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--ink-3);
+    font-style: italic;
+    text-align: center;
+    padding: var(--s-7);
+    font-size: var(--fs-body);
+    line-height: var(--lh-prose);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .empty .hint {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-mono);
+    margin-top: var(--s-4);
+    color: var(--ink-4);
+    display: block;
+  }
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark" id="brandMark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="22" height="22">
+        <circle class="bm-ring" cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round"></circle>
+        <circle class="bm-core" cx="16" cy="16" r="4" fill="currentColor"></circle>
+      </svg>
+    </span>
+    <span class="brand-word">Baruch<em>.</em></span>
+  </div>
+  <div class="meta">
+    <button onclick="resetAll()">reset</button>
+  </div>
+</header>
+
+<!-- Password gate — shown until user enters correct password -->
+<div class="password-gate" id="passwordGate">
+  <div class="password-gate-card">
+    <div class="password-gate-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="36" height="36">
+        <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round" opacity="0.7"></circle>
+        <circle cx="16" cy="16" r="4" fill="currentColor"></circle>
+      </svg>
+    </div>
+    <h1 class="password-gate-title">Baruch<em>.</em></h1>
+    <p class="password-gate-sub">A space for branched thinking.</p>
+    <form class="password-gate-form" id="passwordForm" autocomplete="off">
+      <input type="password" id="passwordInput" placeholder="password" autocomplete="off" autofocus />
+      <button type="submit">enter</button>
+    </form>
+    <p class="password-gate-error" id="passwordError"></p>
+  </div>
+</div>
+
+<div class="workspace" id="workspace">
+  <div class="thread" id="mainThread" data-thread-id="main">
+    <div class="thread-header">
+      <div class="thread-header-row">
+        <div class="thread-title">main</div>
+      </div>
+    </div>
+    <div class="thread-scroll" id="mainScroll">
+      <div class="graph-band">
+        <div class="graph-band-header">
+          <span class="graph-band-label">Structure</span>
+          <span class="graph-band-spacer"></span>
+          <div class="graph-controls">
+            <button onclick="recenterGraph()" title="recenter">⊙ center</button>
+          </div>
+        </div>
+        <div class="graph-canvas-wrap">
+          <svg id="graphSvg"></svg>
+          <div class="graph-empty-hint" id="graphEmptyHint">No branches yet. Select text in Claude's replies to begin shaping the structure.</div>
+        </div>
+      </div>
+      <div class="messages" id="mainMessages">
+        <div class="empty">
+          Begin anywhere. As Claude responds, select any phrase to branch into a deeper thread — the structure of your thinking will accumulate above.
+          <span class="hint">main · root</span>
+        </div>
+      </div>
+      <button class="scroll-to-bottom" id="mainScrollBtn" onclick="scrollThreadToBottom('main')" title="scroll to bottom" aria-label="scroll to bottom">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 2v10m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="composer">
+      <div class="composer-row">
+        <textarea id="mainInput" data-thread-id="main" placeholder="What are you thinking about?" rows="1"></textarea>
+        <button onclick="sendMessage('main')">send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="thread branch hidden" id="branchSlot" data-thread-id="">
+    <div class="thread-header">
+      <div class="thread-header-row">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <button class="thread-close" onclick="closeBranchSlot()" title="close (esc)">×</button>
+      </div>
+    </div>
+    <div class="thread-source" id="branchSource">
+      <span class="thread-source-label">selected from <span id="branchParentName">parent</span></span>
+      <span id="branchSourceText"></span>
+    </div>
+    <div class="thread-scroll" id="branchScroll">
+      <div class="messages" id="branchMessages"></div>
+      <button class="scroll-to-bottom" id="branchScrollBtn" onclick="scrollThreadToBottom('branch')" title="scroll to bottom" aria-label="scroll to bottom">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 2v10m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="composer">
+      <div class="composer-row">
+        <textarea id="branchInput" placeholder="Ask about this..." rows="1"></textarea>
+        <button onclick="sendMessage(state.activeBranchId)">send</button>
+      </div>
+      <div class="composer-hint">esc → ascend one level · select text in any reply to branch deeper</div>
+    </div>
+  </div>
+</div>
+
+<button class="branch-trigger" id="branchTrigger">↳ branch from this</button>
+
+<script>
+// ============ STATE ============
+const state = {
+  password: sessionStorage.getItem('baruch_password') || '',
+  threads: {
+    main: {
+      id: 'main',
+      messages: [],
+      sourceText: null,
+      parentId: null,
+      marks: [],
+      label: 'main',
+    }
+  },
+  activeBranchId: null,
+  selection: null,
+};
+
+// Scroll intent: tells the renderer what to do with the scroll position after
+// re-rendering a thread. Possible values per thread:
+//   'bottom'              -> scroll to bottom (e.g. user just sent a message)
+//   { preserve: <px> }    -> restore scroll to a specific top (e.g. mid-stream re-render)
+//   null                  -> do nothing
+const __scrollIntent = { main: null, branch: null };
+
+function scrollKeyForThread(threadId) {
+  return threadId === 'main' ? 'main' : 'branch';
+}
+function scrollEnvForThread(threadId) {
+  return threadId === 'main'
+    ? { scrollEl: document.getElementById('mainScroll'), btn: document.getElementById('mainScrollBtn') }
+    : { scrollEl: document.getElementById('branchScroll'), btn: document.getElementById('branchScrollBtn') };
+}
+
+// Manual scroll-to-bottom (button click or programmatic).
+function scrollThreadToBottom(threadKey) {
+  const { scrollEl } = threadKey === 'main'
+    ? { scrollEl: document.getElementById('mainScroll') }
+    : { scrollEl: document.getElementById('branchScroll') };
+  if (!scrollEl) return;
+  scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+}
+
+// Show the floating scroll-to-bottom button when user is more than ~120px
+// above the bottom; hide otherwise.
+function updateScrollBtnVisibility(threadKey) {
+  const { scrollEl, btn } = scrollEnvForThread(threadKey === 'main' ? 'main' : 'branch');
+  if (!scrollEl || !btn) return;
+  const distFromBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+  if (distFromBottom > 120) {
+    btn.classList.add('visible');
+  } else {
+    btn.classList.remove('visible');
+  }
+}
+
+// Capture current scroll position so a re-render preserves it.
+function captureScroll(threadKey) {
+  const { scrollEl } = scrollEnvForThread(threadKey === 'main' ? 'main' : 'branch');
+  if (!scrollEl) return;
+  __scrollIntent[threadKey === 'main' ? 'main' : 'branch'] = { preserve: scrollEl.scrollTop };
+}
+
+function persist() {
+  const toSave = {
+    threads: {},
+    activeBranchId: state.activeBranchId,
+  };
+  for (const [id, t] of Object.entries(state.threads)) {
+    toSave.threads[id] = {
+      id: t.id,
+      messages: t.messages.map(m => ({ role: m.role, content: m.content })),
+      sourceText: t.sourceText,
+      parentId: t.parentId,
+      marks: t.marks || [],
+      label: t.label || null,
+    };
+  }
+  localStorage.setItem('baruch_state_v4', JSON.stringify(toSave));
+}
+
+function restore() {
+  // try new key first, fall back to old name (one-time migration)
+  let raw = localStorage.getItem('baruch_state_v4');
+  if (!raw) {
+    raw = localStorage.getItem('benedictus_state_v4');
+    if (raw) {
+      // migrate
+      localStorage.setItem('baruch_state_v4', raw);
+      localStorage.removeItem('benedictus_state_v4');
+    }
+  }
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    state.threads = saved.threads || state.threads;
+    state.activeBranchId = saved.activeBranchId || null;
+    if (!state.threads.main) {
+      state.threads.main = { id: 'main', messages: [], sourceText: null, parentId: null, marks: [], label: 'main' };
+    }
+    for (const t of Object.values(state.threads)) {
+      if (!t.marks) t.marks = [];
+      if (!t.label && t.id !== 'main') {
+        t.label = makeQuickLabel(t.sourceText);
+      }
+    }
+  } catch (e) { console.error('restore failed', e); }
+}
+
+// ============ PASSWORD GATE ============
+async function verifyPassword(pw) {
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+function showGate() {
+  document.getElementById('passwordGate').classList.remove('hidden');
+  setTimeout(() => {
+    const inp = document.getElementById('passwordInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }, 50);
+}
+
+function hideGate() {
+  document.getElementById('passwordGate').classList.add('hidden');
+}
+
+function setGateError(msg) {
+  document.getElementById('passwordError').textContent = msg || '';
+}
+
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById('passwordInput').value;
+  if (!pw) return;
+  setGateError('checking…');
+  const ok = await verifyPassword(pw);
+  if (ok) {
+    state.password = pw;
+    sessionStorage.setItem('baruch_password', pw);
+    setGateError('');
+    hideGate();
+  } else {
+    setGateError('not quite.');
+  }
+});
+
+// On load: if we have a cached password, verify it silently; otherwise show gate.
+(async function bootstrapAuth() {
+  if (state.password) {
+    const ok = await verifyPassword(state.password);
+    if (ok) { hideGate(); return; }
+    // stale password — clear and prompt
+    state.password = '';
+    sessionStorage.removeItem('baruch_password');
+  }
+  showGate();
+})();
+
+// If any /api/chat call returns 401, the password rotated. Force re-auth.
+function handleAuthFailure() {
+  state.password = '';
+  sessionStorage.removeItem('baruch_password');
+  setGateError('session expired. please re-enter the password.');
+  showGate();
+}
+
+// ============ RESET ============
+function resetAll() {
+  if (!confirm('Clear all conversations? This cannot be undone.')) return;
+  localStorage.removeItem('baruch_state_v4');
+  localStorage.removeItem('benedictus_state_v4');
+  state.threads = { main: { id: 'main', messages: [], sourceText: null, parentId: null, marks: [], label: 'main' } };
+  state.activeBranchId = null;
+  closeBranchSlot();
+  renderMain();
+  rebuildGraph();
+}
+
+// ============ AUTO-RESIZE & KEYBOARD ============
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+document.addEventListener('input', e => {
+  if (e.target.tagName === 'TEXTAREA') autoResize(e.target);
+});
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' && e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const tid = e.target.dataset.threadId === 'main' ? 'main' : state.activeBranchId;
+    if (tid) sendMessage(tid);
+    return;
+  }
+  if (e.key === 'Escape') {
+    if (state.activeBranchId) {
+      const cur = state.threads[state.activeBranchId];
+      if (cur && cur.parentId && cur.parentId !== 'main') {
+        openBranchSlot(cur.parentId);
+      } else {
+        closeBranchSlot();
+      }
+    }
+  }
+});
+
+// ============ HELPERS ============
+function setSpinning(on) {
+  const m = document.getElementById('brandMark');
+  if (!m) return;
+  m.classList.toggle('spinning', !!on);
+}
+
+function getAncestorChain(threadId) {
+  const chain = [];
+  let cur = threadId;
+  while (cur) {
+    chain.unshift(cur);
+    const t = state.threads[cur];
+    if (!t || !t.parentId) break;
+    cur = t.parentId;
+  }
+  return chain;
+}
+
+function shortLabel(text, max = 28) {
+  if (!text) return '';
+  if (text.length <= max) return text;
+  return text.slice(0, max).trim() + '…';
+}
+
+function makeQuickLabel(sourceText) {
+  // Strip markdown, take first content words
+  if (!sourceText) return 'branch';
+  let t = sourceText
+    .replace(/\*+/g, '')
+    .replace(/`+/g, '')
+    .replace(/[#>\-\[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Take first ~3-4 meaningful words, max 24 chars
+  const words = t.split(' ').filter(w => w.length > 1);
+  let label = '';
+  for (const w of words) {
+    if ((label + ' ' + w).trim().length > 24) break;
+    label = (label + ' ' + w).trim();
+  }
+  return label || shortLabel(t, 20) || 'branch';
+}
+
+async function refineLabel(branchId) {
+  const t = state.threads[branchId];
+  if (!t || !state.password) return;
+  // only refine if branch has at least 1 assistant reply
+  const hasReply = t.messages.some(m => m.role === 'assistant');
+  if (!hasReply) return;
+
+  const sample = t.messages.slice(0, 4).map(m => `[${m.role}]: ${m.content.slice(0, 300)}`).join('\n\n');
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.password,
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 30,
+        stream: false,
+        system: 'Output only a 2-4 word label (max 24 characters) capturing the core idea of this branch. No quotes, no preamble. Match the language. Be concrete and specific, not generic.',
+        messages: [{ role: 'user', content: 'Selected phrase: "' + t.sourceText + '"\n\nConversation in branch:\n' + sample + '\n\nLabel:' }],
+      })
+    });
+    if (response.status === 401) { handleAuthFailure(); return; }
+    if (!response.ok) return;
+    const data = await response.json();
+    const phrase = data.content.filter(c => c.type === 'text').map(c => c.text).join('').trim().replace(/^["'"']|["'"']$/g, '');
+    if (phrase && phrase.length > 0 && phrase.length <= 30) {
+      t.label = phrase;
+      persist();
+      rebuildGraph();
+    }
+  } catch (e) {}
+}
+
+// ============ RENDER THREAD ============
+function renderThread(threadId) {
+  if (threadId === 'main') renderMain();
+  else if (state.activeBranchId === threadId) renderBranch();
+}
+
+function renderMain() {
+  const thread = state.threads.main;
+  const messagesEl = document.getElementById('mainMessages');
+
+  if (thread.messages.length === 0) {
+    messagesEl.innerHTML = `<div class="empty">Begin anywhere. As Claude responds, select any phrase to branch into a deeper thread — the structure of your thinking will accumulate above.<span class="hint">main · root</span></div>`;
+    return;
+  }
+
+  messagesEl.innerHTML = '';
+  thread.messages.forEach((msg, idx) => {
+    const div = document.createElement('div');
+    div.className = 'msg ' + msg.role;
+    div.dataset.msgIndex = idx;
+    let content = msg.role === 'assistant'
+      ? formatContentWithMarks(msg.content, getMarksForMessage('main', idx))
+      : formatContent(msg.content);
+    if (msg.streaming) content += '<span class="stream-cursor"></span>';
+    div.innerHTML = `<div class="msg-role">${msg.role === 'user' ? 'you' : 'claude'}</div><div class="msg-content">${content}</div>`;
+    messagesEl.appendChild(div);
+  });
+
+  if (thread.thinking) {
+    const div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.innerHTML = `<div class="msg-role">claude</div><div class="msg-content thinking">thinking</div>`;
+    messagesEl.appendChild(div);
+  }
+
+  attachMarkHandlers(messagesEl);
+  highlightCodeBlocks(messagesEl);
+
+  // scroll behavior: caller decides via __scrollIntent.
+  const scrollEl = document.getElementById('mainScroll');
+  if (scrollEl) {
+    if (__scrollIntent.main === 'bottom') {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+      __scrollIntent.main = null;
+    } else if (__scrollIntent.main && __scrollIntent.main.preserve != null) {
+      scrollEl.scrollTop = __scrollIntent.main.preserve;
+      __scrollIntent.main = null;
+    }
+    updateScrollBtnVisibility('main');
+  }
+}
+
+function renderBranch() {
+  const branchId = state.activeBranchId;
+  if (!branchId) return;
+  const thread = state.threads[branchId];
+  if (!thread) return;
+
+  // breadcrumb
+  const chain = getAncestorChain(branchId);
+  const crumbEl = document.getElementById('breadcrumb');
+  crumbEl.innerHTML = '';
+  chain.forEach((tid, i) => {
+    const t = state.threads[tid];
+    const span = document.createElement('span');
+    span.className = 'crumb' + (tid === branchId ? ' current' : '') + (tid === 'main' ? ' root' : '');
+    span.textContent = tid === 'main' ? 'main' : (t.label || shortLabel(t.sourceText, 24));
+    if (tid !== branchId) {
+      span.title = tid === 'main' ? 'return to main (esc)' : ('zoom out to: ' + t.sourceText);
+      span.addEventListener('click', () => {
+        if (tid === 'main') closeBranchSlot();
+        else openBranchSlot(tid);
+      });
+    }
+    crumbEl.appendChild(span);
+    if (i < chain.length - 1) {
+      const sep = document.createElement('span');
+      sep.className = 'crumb-sep';
+      sep.textContent = '▸';
+      crumbEl.appendChild(sep);
+    }
+  });
+
+  const parent = state.threads[thread.parentId];
+  document.getElementById('branchParentName').textContent =
+    thread.parentId === 'main' ? 'main' : (parent.label || shortLabel(parent ? parent.sourceText : 'parent', 20));
+  document.getElementById('branchSourceText').textContent = '"' + thread.sourceText + '"';
+
+  const messagesEl = document.getElementById('branchMessages');
+  messagesEl.innerHTML = '';
+  thread.messages.forEach((msg, idx) => {
+    const div = document.createElement('div');
+    div.className = 'msg ' + msg.role;
+    div.dataset.msgIndex = idx;
+    let content = msg.role === 'assistant'
+      ? formatContentWithMarks(msg.content, getMarksForMessage(branchId, idx))
+      : formatContent(msg.content);
+    if (msg.streaming) content += '<span class="stream-cursor"></span>';
+    div.innerHTML = `<div class="msg-role">${msg.role === 'user' ? 'you' : 'claude'}</div><div class="msg-content">${content}</div>`;
+    messagesEl.appendChild(div);
+  });
+
+  if (thread.thinking) {
+    const div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.innerHTML = `<div class="msg-role">claude</div><div class="msg-content thinking">thinking</div>`;
+    messagesEl.appendChild(div);
+  }
+
+  attachMarkHandlers(messagesEl);
+  highlightCodeBlocks(messagesEl);
+
+  const scrollEl = document.getElementById('branchScroll');
+  if (scrollEl) {
+    if (__scrollIntent.branch === 'bottom') {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+      __scrollIntent.branch = null;
+    } else if (__scrollIntent.branch && __scrollIntent.branch.preserve != null) {
+      scrollEl.scrollTop = __scrollIntent.branch.preserve;
+      __scrollIntent.branch = null;
+    }
+    updateScrollBtnVisibility('branch');
+  }
+}
+
+function getMarksForMessage(threadId, msgIndex) {
+  const t = state.threads[threadId];
+  if (!t || !t.marks) return [];
+  return t.marks
+    .filter(m => m.msgIndex === msgIndex)
+    .filter(m => state.threads[m.branchId])
+    .filter(m => m.sourceText && m.sourceText.length >= 2);
+}
+
+function attachMarkHandlers(rootEl) {
+  rootEl.querySelectorAll('.branch-mark').forEach(mark => {
+    mark.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const bid = mark.dataset.branchId;
+      openBranchSlot(bid);
+    });
+  });
+}
+
+// ============================================================
+// MARKDOWN RENDERING
+// ============================================================
+// Configure marked with sane defaults + syntax highlighting via hljs
+let __markedConfigured = false;
+function ensureMarkedConfigured() {
+  if (__markedConfigured) return;
+  if (typeof marked === 'undefined') return;
+  marked.setOptions({
+    breaks: true,        // single newline -> <br>
+    gfm: true,           // github-flavored markdown
+    headerIds: false,
+    mangle: false,
+  });
+  __markedConfigured = true;
+}
+
+// Render markdown to HTML safely-ish. We trust Claude's output (it's our LLM)
+// but still strip <script>/<iframe>/event handlers as a precaution.
+function renderMarkdown(text) {
+  ensureMarkedConfigured();
+  let html;
+  if (typeof marked === 'undefined') {
+    // fallback if CDN failed
+    return escapeHtml(text)
+      .split('\n\n').map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+  }
+  try {
+    html = marked.parse(text);
+  } catch (e) {
+    return escapeHtml(text)
+      .split('\n\n').map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+  }
+  // sanitize: drop script/iframe/style tags and on* attributes
+  html = html
+    .replace(/<\s*(script|iframe|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(script|iframe|style)[^>]*\/?>/gi, '')
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+  return html;
+}
+
+function highlightCodeBlocks(rootEl) {
+  if (typeof hljs === 'undefined') return;
+  rootEl.querySelectorAll('pre code').forEach(el => {
+    if (el.dataset.highlighted === 'yes') return;
+    try {
+      hljs.highlightElement(el);
+    } catch (e) {}
+  });
+}
+
+// Plain-text formatter (for user messages and as a fallback).
+function formatContent(text) {
+  return renderMarkdown(text);
+}
+
+// For assistant messages with branch marks: render markdown first, then walk
+// text nodes and wrap matching source-text occurrences in branch-mark spans.
+// This is reliable because marks are recorded against the raw text; we search
+// within rendered TEXT, not HTML, so markdown formatting doesn't interfere.
+function formatContentWithMarks(text, marks) {
+  if (!marks || marks.length === 0) return renderMarkdown(text);
+
+  const html = renderMarkdown(text);
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  // sort marks by length desc so longer phrases match first (avoid partial overlap)
+  const sortedMarks = [...marks].sort((a, b) => b.sourceText.length - a.sourceText.length);
+
+  for (const mark of sortedMarks) {
+    if (!mark.sourceText || mark.sourceText.length < 2) continue;
+    wrapInTextNodes(wrapper, mark.sourceText, mark);
+  }
+
+  return wrapper.innerHTML;
+}
+
+// Walk text nodes; for each that contains the target string, split it and wrap
+// the matching portion in a <span class="branch-mark">.
+function wrapInTextNodes(rootEl, target, mark) {
+  if (!target) return;
+  const isActive = state.activeBranchId === mark.branchId;
+  const className = 'branch-mark' + (isActive ? ' active' : '');
+
+  // collect candidate text nodes first; modifying during traversal would skip nodes
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      // skip text inside an existing branch-mark or inside <code>/<pre> (don't mark code)
+      let p = node.parentElement;
+      while (p) {
+        if (p.classList && p.classList.contains('branch-mark')) return NodeFilter.FILTER_REJECT;
+        if (p.tagName === 'CODE' || p.tagName === 'PRE') return NodeFilter.FILTER_REJECT;
+        p = p.parentElement;
+      }
+      return node.nodeValue.indexOf(target) >= 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const candidates = [];
+  let n; while ((n = walker.nextNode())) candidates.push(n);
+
+  for (const node of candidates) {
+    const text = node.nodeValue;
+    const idx = text.indexOf(target);
+    if (idx < 0) continue;
+
+    const before = text.slice(0, idx);
+    const matched = text.slice(idx, idx + target.length);
+    const after = text.slice(idx + target.length);
+
+    const span = document.createElement('span');
+    span.className = className;
+    span.dataset.branchId = mark.branchId;
+    span.textContent = matched;
+
+    const parent = node.parentNode;
+    if (before) parent.insertBefore(document.createTextNode(before), node);
+    parent.insertBefore(span, node);
+    if (after) {
+      const afterNode = document.createTextNode(after);
+      parent.insertBefore(afterNode, node);
+    }
+    parent.removeChild(node);
+    return; // only mark first occurrence per call
+  }
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+// ============ BRANCH SLOT ============
+function openBranchSlot(branchId, opts = {}) {
+  const thread = state.threads[branchId];
+  if (!thread) return;
+  state.activeBranchId = branchId;
+  persist();
+  const slot = document.getElementById('branchSlot');
+  slot.classList.remove('hidden');
+  slot.dataset.threadId = branchId;
+  renderBranch();
+  renderMain();
+  rebuildGraph();
+
+  // if requested, scroll the source text into view (in its parent thread, if it's main)
+  if (opts.scrollToSource && thread.parentId === 'main') {
+    setTimeout(() => {
+      const mark = document.querySelector(`#mainMessages .branch-mark[data-branch-id="${branchId}"]`);
+      if (mark) {
+        mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        mark.classList.add('flash');
+        setTimeout(() => mark.classList.remove('flash'), 1700);
+      }
+    }, 80);
+  }
+
+  setTimeout(() => document.getElementById('branchInput').focus(), 50);
+}
+
+function closeBranchSlot() {
+  state.activeBranchId = null;
+  persist();
+  document.getElementById('branchSlot').classList.add('hidden');
+  document.getElementById('branchSlot').dataset.threadId = '';
+  renderMain();
+  rebuildGraph();
+}
+
+// ============ SEND MESSAGE ============
+async function sendMessage(threadId) {
+  if (!state.password) { showGate(); return; }
+  if (!threadId) return;
+  const thread = state.threads[threadId];
+  if (!thread) return;
+
+  const input = threadId === 'main'
+    ? document.getElementById('mainInput')
+    : document.getElementById('branchInput');
+  const userText = input.value.trim();
+  if (!userText) return;
+
+  thread.messages.push({ role: 'user', content: userText });
+  input.value = '';
+  autoResize(input);
+  thread.thinking = true;
+  setSpinning(true);
+  // user just sent a message — they want to see their message and the response
+  __scrollIntent[scrollKeyForThread(threadId)] = 'bottom';
+  persist();
+  renderThread(threadId);
+
+  let systemPrompt = `You are a thoughtful conversation partner inside Baruch, a tool for branched, deep thinking. Some principles:
+
+- Be direct. State your view; don't hedge with "it depends" unless that's literally the answer.
+- Push back when you disagree, even (especially) on opinions the user seems attached to. Disagreement is a service, not rudeness.
+- Avoid filler praise ("great question", "interesting point"). Get to the substance.
+- When the user is exploring something complex, prefer concrete examples and specific cases over abstract framing.
+- When you're uncertain, say so clearly—don't fake confidence.
+- Match the user's register: if they're casual, be casual; if they're rigorous, be rigorous.
+- Length should match weight. Short questions get short answers. Don't pad.
+- The user can branch off any sentence you write into a deeper thread. Write in a way that supports this: paragraphs that contain genuine sub-ideas worth exploring, not vague summaries.`;
+
+  if (threadId !== 'main') {
+    const chain = getAncestorChain(threadId);
+    systemPrompt += `\n\nThis is a branched thread. Here is the full path of how the user got here:\n`;
+    for (let i = 0; i < chain.length; i++) {
+      const tid = chain[i];
+      const t = state.threads[tid];
+      if (tid === 'main') {
+        systemPrompt += `\n=== MAIN THREAD ===\n`;
+        t.messages.forEach(m => { systemPrompt += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
+      } else if (tid === threadId) {
+        const parentT = state.threads[t.parentId];
+        const fromName = t.parentId === 'main' ? 'main' : (parentT?.label || parentT?.sourceText || 'parent');
+        systemPrompt += `\n=== CURRENT BRANCH ===\nThe user selected this from "${fromName}":\n"${t.sourceText}"\nNow they are exploring it. Their conversation in this branch follows below.\n`;
+      } else {
+        systemPrompt += `\n=== INTERMEDIATE BRANCH (selected: "${t.sourceText}") ===\n`;
+        t.messages.forEach(m => { systemPrompt += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
+      }
+    }
+    systemPrompt += `\n\nFocus your responses on the current branch, but use the ancestor context to understand what the user is really after.`;
+  }
+
+  const apiMessages = thread.messages.map(m => ({ role: m.role, content: m.content }));
+  const requestBody = {
+    model: 'claude-opus-4-7',
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: apiMessages,
+    stream: true,
+  };
+
+  // Try streaming first; if anything goes wrong, fall back to non-streaming.
+  let streamingFailed = false;
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.password,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.status === 401) { handleAuthFailure(); return; }
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error('API error: ' + response.status + ' — ' + err);
+    }
+    if (!response.body || !response.body.getReader) {
+      // ReadableStream not supported — fall back
+      streamingFailed = true;
+      throw new Error('streaming unsupported');
+    }
+
+    // Insert the streaming placeholder message
+    thread.thinking = false;
+    const msgIdx = thread.messages.push({ role: 'assistant', content: '', streaming: true }) - 1;
+    renderThread(threadId);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let accumulated = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Parse SSE: events separated by \n\n, each event has lines like "event: ..." and "data: ..."
+      const events = buffer.split('\n\n');
+      buffer = events.pop(); // last partial chunk stays in buffer
+
+      for (const ev of events) {
+        const lines = ev.split('\n');
+        let dataLine = '';
+        for (const line of lines) {
+          if (line.startsWith('data: ')) dataLine = line.slice(6);
+        }
+        if (!dataLine) continue;
+        try {
+          const obj = JSON.parse(dataLine);
+          if (obj.type === 'content_block_delta' && obj.delta && obj.delta.type === 'text_delta') {
+            accumulated += obj.delta.text;
+            thread.messages[msgIdx].content = accumulated;
+            updateStreamingMessage(threadId, msgIdx, accumulated);
+          } else if (obj.type === 'message_stop') {
+            // finished
+          } else if (obj.type === 'error') {
+            throw new Error(obj.error?.message || 'stream error');
+          }
+        } catch (e) {
+          // ignore parse errors on partial chunks
+        }
+      }
+    }
+
+    // Finalize
+    thread.messages[msgIdx].streaming = false;
+    setSpinning(false);
+    persist();
+    renderThread(threadId); // full re-render to attach mark handlers correctly
+
+    if (threadId !== 'main') refineLabel(threadId);
+    return;
+  } catch (err) {
+    // remove any streaming placeholder
+    if (thread.messages.length > 0 && thread.messages[thread.messages.length - 1].streaming) {
+      thread.messages.pop();
+    }
+    if (!streamingFailed && err.message && err.message.indexOf('API error') === 0) {
+      // genuine API error — surface it, don't fall back
+      thread.thinking = false;
+      setSpinning(false);
+      thread.messages.push({ role: 'assistant', content: '⚠️ ' + err.message });
+      persist();
+      renderThread(threadId);
+      return;
+    }
+    // otherwise fall through to non-streaming fallback
+    streamingFailed = true;
+  }
+
+  // === Non-streaming fallback ===
+  if (streamingFailed) {
+    thread.thinking = true;
+    renderThread(threadId);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + state.password,
+        },
+        body: JSON.stringify({ ...requestBody, stream: false }),
+      });
+      if (response.status === 401) { handleAuthFailure(); return; }
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error('API error: ' + response.status + ' — ' + err);
+      }
+      const data = await response.json();
+      const assistantText = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n\n');
+      thread.messages.push({ role: 'assistant', content: assistantText });
+      thread.thinking = false;
+      setSpinning(false);
+      persist();
+      renderThread(threadId);
+      if (threadId !== 'main') refineLabel(threadId);
+    } catch (err) {
+      thread.thinking = false;
+      setSpinning(false);
+      thread.messages.push({ role: 'assistant', content: '⚠️ ' + err.message });
+      persist();
+      renderThread(threadId);
+    }
+  }
+}
+
+// In-place token update — finds the streaming message DOM and updates only its content,
+// avoiding a full thread re-render on every token (which would scroll-jitter and flicker).
+// Throttle streaming re-renders: markdown parse is fast but DOM thrash on
+// every token gets jittery. ~30fps cap for rendering during stream.
+let __lastStreamRender = 0;
+function updateStreamingMessage(threadId, msgIdx, content, force) {
+  const now = performance.now();
+  if (!force && now - __lastStreamRender < 33) return;
+  __lastStreamRender = now;
+
+  const containerId = threadId === 'main' ? 'mainMessages' : 'branchMessages';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const msgEl = container.querySelector(`.msg[data-msg-index="${msgIdx}"] .msg-content`);
+  if (!msgEl) return;
+
+  // Render markdown live (no marks during stream — they're added on final render).
+  // Skip code-block syntax highlighting until stream completes; partial code is noisy.
+  msgEl.innerHTML = renderMarkdown(content) + '<span class="stream-cursor"></span>';
+
+  // gentle scroll: only if user is near the bottom already.
+  // scrolling lives on .thread-scroll, not .messages
+  const scrollEl = threadId === 'main'
+    ? document.getElementById('mainScroll')
+    : document.getElementById('branchScroll');
+  if (!scrollEl) return;
+  const nearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 120;
+  if (nearBottom) scrollEl.scrollTop = scrollEl.scrollHeight;
+  updateScrollBtnVisibility(threadId === 'main' ? 'main' : 'branch');
+}
+
+// ============ TEXT SELECTION → BRANCH ============
+const branchTrigger = document.getElementById('branchTrigger');
+
+document.addEventListener('mouseup', (e) => {
+  if (e.target === branchTrigger) return;
+  setTimeout(() => {
+    const sel = window.getSelection();
+    const text = sel.toString().trim();
+    if (!text || text.length < 3) { hideBranchTrigger(); return; }
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const msgEl = container.nodeType === 3
+      ? container.parentElement.closest('.msg.assistant')
+      : container.closest && container.closest('.msg.assistant');
+    if (!msgEl) { hideBranchTrigger(); return; }
+    const threadEl = msgEl.closest('.thread');
+    const sourceThreadId = threadEl ? threadEl.dataset.threadId : 'main';
+    if (!sourceThreadId || !state.threads[sourceThreadId]) { hideBranchTrigger(); return; }
+    const msgIndex = parseInt(msgEl.dataset.msgIndex);
+    const rect = range.getBoundingClientRect();
+    branchTrigger.style.left = (rect.left + rect.width / 2 - 70) + 'px';
+    branchTrigger.style.top = (rect.bottom + 8) + 'px';
+    branchTrigger.classList.add('visible');
+    state.selection = { text, sourceThreadId, msgIndex };
+  }, 10);
+});
+
+document.addEventListener('mousedown', (e) => {
+  if (e.target !== branchTrigger && !e.target.closest('.branch-mark') && !e.target.closest('.crumb') && !e.target.closest('.graph-node')) {
+    hideBranchTrigger();
+  }
+});
+
+function hideBranchTrigger() {
+  branchTrigger.classList.remove('visible');
+}
+
+branchTrigger.addEventListener('click', () => {
+  if (!state.selection) return;
+  const { text, sourceThreadId, msgIndex } = state.selection;
+  const sourceThread = state.threads[sourceThreadId];
+  if (!sourceThread) return;
+  if (!sourceThread.marks) sourceThread.marks = [];
+
+  const existing = sourceThread.marks.find(m => m.msgIndex === msgIndex && m.sourceText === text);
+  if (existing) {
+    openBranchSlot(existing.branchId);
+    hideBranchTrigger();
+    window.getSelection().removeAllRanges();
+    return;
+  }
+
+  const newId = 'b' + Date.now();
+  state.threads[newId] = {
+    id: newId,
+    messages: [],
+    sourceText: text,
+    parentId: sourceThreadId,
+    marks: [],
+    label: makeQuickLabel(text),
+  };
+  sourceThread.marks.push({ branchId: newId, sourceText: text, msgIndex });
+  persist();
+  openBranchSlot(newId);
+  rebuildGraph();
+  hideBranchTrigger();
+  window.getSelection().removeAllRanges();
+});
+
+// ============ GRAPH (d3 force-directed) ============
+let simulation = null;
+let svgGroup = null;
+let zoomBehavior = null;
+
+function initGraph() {
+  const svg = d3.select('#graphSvg');
+  svg.selectAll('*').remove();
+
+  // a single group that gets transformed by zoom
+  svgGroup = svg.append('g').attr('class', 'graph-zoom-group');
+
+  // edge group (drawn first, behind nodes)
+  svgGroup.append('g').attr('class', 'edges');
+  svgGroup.append('g').attr('class', 'nodes');
+
+  zoomBehavior = d3.zoom()
+    .scaleExtent([0.3, 3])
+    .on('zoom', (event) => {
+      svgGroup.attr('transform', event.transform);
+    });
+  svg.call(zoomBehavior);
+}
+
+function rebuildGraph() {
+  if (!svgGroup) initGraph();
+
+  const allThreads = Object.values(state.threads);
+  const hasBranches = allThreads.length > 1;
+  document.getElementById('graphEmptyHint').style.display = hasBranches ? 'none' : 'flex';
+
+  const svgEl = document.getElementById('graphSvg');
+  const w = svgEl.clientWidth;
+  const h = svgEl.clientHeight;
+
+  // build nodes & links
+  const nodes = allThreads.map(t => ({
+    id: t.id,
+    label: t.id === 'main' ? 'main' : (t.label || makeQuickLabel(t.sourceText)),
+    isMain: t.id === 'main',
+    isActive: state.activeBranchId === t.id || (t.id === 'main' && !state.activeBranchId),
+  }));
+  const links = allThreads
+    .filter(t => t.parentId)
+    .map(t => ({ source: t.parentId, target: t.id }));
+
+  // figure out which links are on the active path (ancestor chain of activeBranchId)
+  const activePath = new Set();
+  if (state.activeBranchId) {
+    const chain = getAncestorChain(state.activeBranchId);
+    for (let i = 0; i < chain.length - 1; i++) {
+      activePath.add(chain[i] + '→' + chain[i+1]);
+    }
+  }
+
+  // preserve existing positions if nodes already exist
+  const oldNodes = simulation ? simulation.nodes() : [];
+  const oldById = {};
+  oldNodes.forEach(n => { oldById[n.id] = n; });
+  nodes.forEach(n => {
+    if (oldById[n.id]) {
+      n.x = oldById[n.id].x;
+      n.y = oldById[n.id].y;
+      n.vx = oldById[n.id].vx;
+      n.vy = oldById[n.id].vy;
+    }
+  });
+
+  // === EDGES ===
+  const edgeSel = svgGroup.select('.edges')
+    .selectAll('line')
+    .data(links, d => (typeof d.source === 'object' ? d.source.id : d.source) + '→' + (typeof d.target === 'object' ? d.target.id : d.target));
+
+  edgeSel.exit().remove();
+  const edgeEnter = edgeSel.enter().append('line').attr('class', 'graph-edge');
+  const edgeAll = edgeEnter.merge(edgeSel)
+    .attr('class', d => {
+      const s = typeof d.source === 'object' ? d.source.id : d.source;
+      const t = typeof d.target === 'object' ? d.target.id : d.target;
+      return 'graph-edge' + (activePath.has(s + '→' + t) ? ' on-active-path' : '');
+    });
+
+  // === NODES ===
+  const nodeSel = svgGroup.select('.nodes')
+    .selectAll('g.graph-node')
+    .data(nodes, d => d.id);
+
+  nodeSel.exit().remove();
+
+  const nodeEnter = nodeSel.enter()
+    .append('g')
+    .attr('class', 'graph-node')
+    .style('opacity', 0);
+
+  nodeEnter.append('circle');
+  nodeEnter.append('text').attr('class', 'graph-node-label');
+
+  nodeEnter.transition().duration(400).style('opacity', 1);
+
+  // click handler — reattached every rebuild for fresh closures
+  const allNodeSel = nodeEnter.merge(nodeSel)
+    .on('click', (event, d) => {
+      event.stopPropagation();
+      if (d.isMain) {
+        closeBranchSlot();
+      } else {
+        // open branch + flash highlight in parent (if parent is currently visible main)
+        openBranchSlot(d.id, { scrollToSource: true });
+      }
+    });
+
+  // class for active state
+  allNodeSel.attr('class', d => 'graph-node' + (d.isMain ? ' main' : '') + (d.isActive ? ' active' : ''));
+
+  // circle styling
+  allNodeSel.select('circle')
+    .attr('r', d => d.isMain ? 9 : (d.isActive ? 8 : 6))
+    .attr('fill', d => d.isMain ? 'var(--gold)' : (d.isActive ? 'var(--gold-bright)' : 'var(--copper)'))
+    .attr('stroke', 'var(--bg-graph)')
+    .attr('stroke-width', 2);
+
+  // label
+  allNodeSel.select('text')
+    .attr('x', 0)
+    .attr('y', d => (d.isMain ? 24 : 22))
+    .attr('text-anchor', 'middle')
+    .text(d => d.label);
+
+  // === SIMULATION ===
+  if (simulation) simulation.stop();
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(85).strength(0.7))
+    .force('charge', d3.forceManyBody().strength(-280))
+    .force('center', d3.forceCenter(w / 2, h / 2).strength(0.05))
+    .force('collide', d3.forceCollide().radius(40))
+    .alpha(0.7)
+    .alphaDecay(0.04)
+    .on('tick', () => {
+      svgGroup.select('.edges').selectAll('line')
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      svgGroup.select('.nodes').selectAll('g.graph-node')
+        .attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+  // Drag behavior
+  const drag = d3.drag()
+    .on('start', (event, d) => {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    })
+    .on('drag', (event, d) => {
+      d.fx = event.x;
+      d.fy = event.y;
+    })
+    .on('end', (event, d) => {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    });
+  allNodeSel.call(drag);
+}
+
+function recenterGraph() {
+  const svg = d3.select('#graphSvg');
+  svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+  if (simulation) simulation.alpha(0.5).restart();
+}
+
+window.addEventListener('resize', () => {
+  if (simulation) {
+    const svgEl = document.getElementById('graphSvg');
+    simulation.force('center', d3.forceCenter(svgEl.clientWidth / 2, svgEl.clientHeight / 2).strength(0.05));
+    simulation.alpha(0.3).restart();
+  }
+});
+
+// ============ INIT ============
+restore();
+renderMain();
+initGraph();
+rebuildGraph();
+if (state.activeBranchId && state.threads[state.activeBranchId]) {
+  openBranchSlot(state.activeBranchId);
+}
+
+// scroll listeners — toggle scroll-to-bottom button visibility
+['main', 'branch'].forEach(key => {
+  const id = key === 'main' ? 'mainScroll' : 'branchScroll';
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('scroll', () => updateScrollBtnVisibility(key), { passive: true });
+});
+// initial check
+updateScrollBtnVisibility('main');
+updateScrollBtnVisibility('branch');
+</script>
+
+</body>
+</html>
